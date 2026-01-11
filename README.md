@@ -7,7 +7,7 @@ The system features a **Streamlit-based Graphical User Interface (GUI)** for sea
 
 ## Technologies Used
 - **Python 3.12**: Core programming language.
-- **Streamlit**: Interactive Web GUI for Drag & Drop, Side-by-Side comparison, and Progress tracking.
+- **Streamlit**: Interactive Web GUI for Drag & Drop, Side-by-Side comparison, and Progress Bar.
 - **Real-ESRGAN (ncnn-py)**: High-performance AI model for 4x image upscaling (GPU accelerated).
 - **OpenCV (cv2)**: Advanced image processing and bitwise pixel manipulation.
 - **NumPy**: Efficient high-speed array operations for pixel flattening and reshaping.
