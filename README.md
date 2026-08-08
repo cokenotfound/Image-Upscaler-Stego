@@ -1,58 +1,142 @@
-# Image Upscale Steganography with AI & SHA-256
+# 🛡️ Stego-Upscale AI
 
-## Abstract
-This project implements a secure, AI-powered image steganography system designed to hide secret messages within digital images. Unlike traditional steganography tools that work on static images, this application first utilizes **Real-ESRGAN (AI Super-Resolution)** to upscale low-resolution inputs by 4x. This process not only enhances visual quality but also significantly increases the pixel capacity available for hiding data.
+AI-Powered Image Upscaler & Steganography Suite using **Real-ESRGAN**, **Least Significant Bit (LSB) Manipulation**, and **Dynamic XOR Encryption**.
 
-The system features a **Streamlit-based Graphical User Interface (GUI)** for seamless interaction. Security is enforced via a dual-layer approach: **Least Significant Bit (LSB)** manipulation for invisibility, combined with **SHA-256 XOR encryption**. Uniquely, the encryption key is derived deterministically from the upscaled image's pixel data, ensuring that the message can only be decrypted if the exact image structure is preserved.
+This repository has been migrated from a local Streamlit application to a modern **Dockerized FastAPI Backend** and a **Manifest V3 Chrome Extension Frontend**.
 
-## Technologies Used
-- **Python 3.12**: Core programming language.
-- **Streamlit**: Interactive Web GUI for Drag & Drop, Side-by-Side comparison, and Progress Bar.
-- **Real-ESRGAN (ncnn-py)**: High-performance AI model for 4x image upscaling (GPU accelerated).
-- **OpenCV (cv2)**: Advanced image processing and bitwise pixel manipulation.
-- **NumPy**: Efficient high-speed array operations for pixel flattening and reshaping.
-- **Hashlib (SHA-256)**: Cryptographic hashing for generating deterministic encryption keys.
+---
 
-## Key Features
-- **AI-Powered Upscaling**: Automatically transforms low-res images into high-resolution (4x) versions using Real-ESRGAN before embedding data.
-- **Modern Web GUI**: A clean, browser-based interface (Streamlit) that eliminates the need for command-line usage.
-- **Dynamic Security**: The encryption key is dynamically generated from the image pixels themselves; if the image is altered, the key breaks, and the message remains secure.
-- **Visual Comparison**: Side-by-side preview of the "Original Low-Res" vs. "Final Stego-Image" to verify visual quality.
-- **Real-Time Feedback**: Interactive progress bars for long-running tasks like AI inference and bitwise embedding.
-- **Lossless Processing**: Uses PNG format strictly to prevent compression artifacts from destroying the hidden message.
+## 🏗️ Architecture Overview
 
-## Directory Structure
-Based on the current project setup, the folder structure is as follows:
+```mermaid
+graph TD
+    subgraph Frontend [Chrome Extension (Manifest V3)]
+        UI[popup.html + popup.js]
+        TabE[Encode: Upscale + Embed]
+        TabD[Decode: Extract Secret]
+    end
 
-```text
-/StegoUpscaleProject
-├── .gitignore            # Git configuration
-├── app.py                # Main Streamlit application (Run this file)
-├── checkmodel.py         # Utility to verify AI models
-├── embed.py              # (Optional/Legacy) Script for embedding
-├── extract.py            # (Optional/Legacy) Script for extracting
-├── functions.py          # Helper functions
-├── main.py               # (Optional) Alternative entry point
-├── README.md             # Project documentation
-├── stegencode.py         # Core logic for LSB embedding & Encryption
-├── stegdecode.py         # Core logic for LSB extraction & Decryption
-├── samples/              # Folder containing test images
-└── weights/              # Folder for Real-ESRGAN model weights
+    subgraph Backend [Dockerized FastAPI API (:8000)]
+        API[FastAPI Server - main.py]
+        ESRGAN[Real-ESRGAN AI Upscaler]
+        LSB[LSB Embed/Extract - embed.py / extract.py]
+        XOR[Dynamic XOR Keystream - functions.py]
+    end
+
+    TabE -->|POST /encode (cover image + payload)| API
+    API --> ESRGAN
+    ESRGAN -->|4x Upscaled Pixels| LSB
+    LSB --> XOR
+    API -->|Lossless PNG Stego Image| TabE
+
+    TabD -->|POST /decode (stego image)| API
+    API --> LSB
+    LSB --> XOR
+    API -->|Extracted Text / Image| TabD
 ```
 
-## Implementation
+---
 
-### 1. Installation
-First, ensure you have Python installed, then install the required dependencies:
+## 🚀 Quick Start Guide
+
+### Option 1: Run Backend with Docker (Recommended)
+
+Make sure Docker Desktop is running, then run:
 
 ```bash
-pip install streamlit opencv-python-headless numpy realesrgan-ncnn-py
+# Build and start container on port 8000
+docker compose up --build
 ```
 
-### 2. Running the App
+Or using standard Docker commands:
+```bash
+docker build -t stego-upscaler-api .
+docker run -d -p 8000:8000 --name stego-backend stego-upscaler-api
+```
 
-Launch the graphical interface using Streamlit from your terminal:
+Test the backend health check:
+```bash
+curl http://localhost:8000/health
+```
+
+---
+
+### Option 2: Run Backend Locally with Python
 
 ```bash
-streamlit run app.py
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Start FastAPI development server
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+---
+
+## 🧩 Installing the Chrome Extension
+
+1. Open **Google Chrome** (or any Chromium browser like Brave, Edge, Opera).
+2. Navigate to `chrome://extensions/` in your address bar.
+3. Enable **Developer mode** toggle in the top-right corner.
+4. Click **Load unpacked** in the top-left corner.
+5. Select the `extension_code` directory in this project (`c:\Aakash_PDFs\Image-Upscaler-Stego\extension_code`).
+6. Pin the **Stego-Upscale AI** extension to your toolbar and open the popup!
+
+---
+
+## 📡 API Reference
+
+### 1. Encode Endpoint (`POST /encode`)
+Upscales the input cover image 4x and embeds secret text or secret image inside newly generated pixels.
+
+- **URL**: `http://localhost:8000/encode`
+- **Content-Type**: `multipart/form-data`
+- **Parameters**:
+  - `payload_type`: `"text"` or `"image"`
+  - `cover_image`: Binary image file (PNG/JPG/WEBP)
+  - `secret_text`: *(Optional)* Secret string to embed (when `payload_type=text`)
+  - `secret_image`: *(Optional)* Secret image file to embed (when `payload_type=image`)
+  - `scale`: Integer scaling factor (default: `4`)
+- **Response**: Lossless PNG file (`image/png`)
+
+#### Example (cURL):
+```bash
+# Hide text in an image
+curl -X POST "http://localhost:8000/encode" \
+  -F "payload_type=text" \
+  -F "cover_image=@cover.png" \
+  -F "secret_text=Confidential intelligence data" \
+  --output stego_upscaled.png
+```
+
+---
+
+### 2. Decode Endpoint (`POST /decode`)
+Extracts and decrypts hidden secret text or image from a stego PNG image.
+
+- **URL**: `http://localhost:8000/decode`
+- **Content-Type**: `multipart/form-data`
+- **Parameters**:
+  - `extract_type`: `"text"` or `"image"`
+  - `stego_image`: Binary stego PNG file
+  - `scale`: Integer scaling factor (default: `4`)
+- **Response**:
+  - If `extract_type=text`: `{"success": true, "text": "<decrypted_message>"}`
+  - If `extract_type=image`: Decoded binary PNG image (`image/png`)
+
+#### Example (cURL):
+```bash
+# Extract hidden text
+curl -X POST "http://localhost:8000/decode" \
+  -F "extract_type=text" \
+  -F "stego_image=@stego_upscaled.png"
+```
+
+---
+
+## 🔐 Steganography Logic Details
+
+1. **Pixel Coordinate Isolation**: When an image is upscaled by factor $S=4$, only pixels at $(r, c)$ where $r \pmod S \neq 0$ or $c \pmod S \neq 0$ are newly generated by the AI upscaler.
+2. **Dynamic XOR Keystream**: The positions $(r, c)$ are serialized and hashed via **SHA-256** to generate a deterministic pseudo-random key stream.
+3. **Payload Framing**: Payloads are framed with a **4-byte big-endian length prefix** + payload bytes, encrypted with the XOR keystream, and written to the Least Significant Bit (LSB) of each RGB/BGR channel.
+4. **Lossless Recovery**: Stego images are saved as lossless PNGs to prevent lossy JPEG DCT quantization from corrupting LSB values.

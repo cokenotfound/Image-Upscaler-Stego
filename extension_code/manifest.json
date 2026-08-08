@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Stego-Upscale AI",
+  "version": "1.0.0",
+  "description": "AI-powered image upscaler & steganography tool using Real-ESRGAN, LSB manipulation, and XOR encryption.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "sidebar_action": {
+    "default_title": "Stego-Upscale AI",
+    "default_panel": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "permissions": [
+    "downloads",
+    "tabs",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["popup.html", "popup.js", "icon.png"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "stego-upscale-ai@local.addon"
+    }
+  }
+}

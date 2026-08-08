@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stego-Upscale AI Workstation</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(145deg, #0d1117, #161b22);
+      --card-bg: rgba(22, 27, 34, 0.85);
+      --card-border: #30363d;
+      --accent: #388bfd;
+      --accent-hover: #58a6ff;
+      --accent-glow: rgba(56, 139, 253, 0.25);
+      --success: #238636;
+      --success-glow: rgba(35, 134, 54, 0.3);
+      --danger: #da3633;
+      --warning: #d29922;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --input-bg: #0d1117;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Base Popup Mode (Compact) */
+    html {
+      width: 430px;
+      min-width: 430px;
+      height: 620px;
+      min-height: 600px;
+      margin: 0;
+      padding: 0;
+      background: #0d1117;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    body {
+      width: 100%;
+      min-height: 100%;
+      box-sizing: border-box;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      padding: 14px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 430px;
+      margin: 0 auto;
+    }
+
+    /* FULL TAB RESPONSIVE MODE (Fills entire screen with perfect center alignment) */
+    @media (min-width: 600px) {
+      html {
+        width: 100% !important;
+        min-width: 100% !important;
+        height: 100% !important;
+        min-height: 100vh !important;
+        background: #090d13 !important;
+      }
+
+      body {
+        width: 100vw !important;
+        min-height: 100vh !important;
+        padding: 36px 20px !important;
+        background: radial-gradient(circle at 50% 0%, #161b22 0%, #090d13 85%) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+      }
+
+      .app-container {
+        max-width: 1120px !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+      }
+
+      .workspace-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+
+      .file-dropzone {
+        padding: 26px 16px !important;
+      }
+
+      textarea {
+        min-height: 100px !important;
+        font-size: 13px !important;
+      }
+
+      .result-image-preview {
+        max-height: 280px !important;
+      }
+
+      header {
+        margin-bottom: 20px !important;
+        padding-bottom: 16px !important;
+      }
+
+      .brand-title {
+        font-size: 19px !important;
+      }
+
+      .brand-icon {
+        font-size: 24px !important;
+        padding: 8px !important;
+      }
+
+      .tabs-nav {
+        margin-bottom: 20px !important;
+        max-width: 480px;
+      }
+
+      .tab-btn {
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+      }
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--card-border);
+      width: 100%;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      font-size: 20px;
+      background: var(--accent-glow);
+      padding: 6px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(56, 139, 253, 0.3);
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      background: linear-gradient(90deg, #58a6ff, #bc8cff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .server-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 14px;
+      background: rgba(13, 17, 23, 0.8);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--warning);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.online { background: #3fb950; }
+    .status-dot.offline { background: var(--danger); }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .btn-popout {
+      background: rgba(56, 139, 253, 0.15);
+      border: 1px solid rgba(56, 139, 253, 0.4);
+      color: var(--accent-hover);
+      padding: 5px 9px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-popout:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-close-window {
+      background: rgba(218, 54, 51, 0.15);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      color: #ff7b72;
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-close-window:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    /* Tabs */
+    .tabs-nav {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: rgba(13, 17, 23, 0.9);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--card-border);
+      margin-bottom: 12px;
+      width: 100%;
+    }
+
+    .tab-btn {
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    /* Segmented Sub-Toggle */
+    .sub-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      background: var(--input-bg);
+      padding: 3px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--card-border);
+      margin: 8px 0 10px;
+    }
+
+    .toggle-opt {
+      font-size: 11px;
+      padding: 6px 8px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--text-muted);
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .toggle-opt.selected {
+      background: #21262d;
+      color: var(--accent-hover);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Cards & Form Elements */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .field-hint {
+      font-size: 10px;
+      color: var(--accent-hover);
+      text-transform: none;
+      font-weight: 500;
+    }
+
+    /* File Drop Area */
+    .file-dropzone {
+      border: 1.5px dashed var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 16px 12px;
+      text-align: center;
+      background: rgba(13, 17, 23, 0.5);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .file-dropzone.dragover, .file-dropzone:hover {
+      border-color: var(--accent);
+      background: rgba(56, 139, 253, 0.1);
+    }
+
+    .dropzone-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .dropzone-icon {
+      font-size: 22px;
+    }
+
+    .dropzone-text {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .dropzone-text strong {
+      color: var(--accent-hover);
+    }
+
+    .file-input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* File Preview Box with Clean Cross (Remove) Button */
+    .file-preview {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: #21262d;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      margin-top: 10px;
+      border: 1px solid var(--card-border);
+      position: relative;
+    }
+
+    .file-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 4px;
+      object-fit: cover;
+      background: #000;
+      border: 1px solid var(--card-border);
+      flex-shrink: 0;
+    }
+
+    .file-meta {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .file-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-info {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .btn-remove-preview {
+      background: rgba(218, 54, 51, 0.2);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: #ff7b72;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: bold;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .btn-remove-preview:hover {
+      background: var(--danger);
+      color: #ffffff;
+      transform: scale(1.1);
+      box-shadow: 0 2px 8px rgba(218, 54, 51, 0.4);
+    }
+
+    /* Inputs */
+    textarea {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      padding: 10px;
+      font-size: 12px;
+      resize: vertical;
+      min-height: 64px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .char-counter {
+      text-align: right;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Primary Action Buttons */
+    .btn-action {
+      width: 100%;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #1f6feb, #238636);
+      color: #ffffff;
+      box-shadow: 0 3px 12px rgba(31, 111, 235, 0.3);
+      transition: all 0.2s ease;
+      margin-top: 6px;
+    }
+
+    .btn-action:hover:not(:disabled) {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(31, 111, 235, 0.4);
+    }
+
+    .btn-action:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Status Banner */
+    .status-banner {
+      display: none;
+      font-size: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      margin: 10px 0 14px;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.4;
+      width: 100%;
+    }
+
+    .status-banner.info {
+      display: flex;
+      background: rgba(56, 139, 253, 0.15);
+      border: 1px solid rgba(56, 139, 253, 0.3);
+      color: #79c0ff;
+    }
+
+    .status-banner.success {
+      display: flex;
+      background: rgba(35, 134, 54, 0.2);
+      border: 1px solid rgba(46, 160, 67, 0.4);
+      color: #56d364;
+    }
+
+    .status-banner.error {
+      display: flex;
+      background: rgba(218, 54, 51, 0.2);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      color: #ff7b72;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Results Section */
+    .result-section {
+      display: none;
+      background: rgba(13, 17, 23, 0.95);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-top: 14px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .result-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-hover);
+    }
+
+    .result-image-preview {
+      width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      background: #000;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--card-border);
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-small {
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-download {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .btn-download:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-copy {
+      background: #21262d;
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-copy:hover {
+      background: #30363d;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">🛡️</div>
+        <div>
+          <div class="brand-title">Stego-Upscale AI</div>
+          <div class="brand-subtitle">Real-ESRGAN + XOR Stego • Press Esc to Close</div>
+        </div>
+      </div>
+      <div class="header-controls">
+        <button class="btn-popout" id="btn-popout-tab" title="Open as persistent floating window so it never auto-closes">
+          <span>⤢</span> Full Tab
+        </button>
+        <button class="btn-close-window" id="btn-close-window" title="Close Stego-Upscale AI (or press Esc)">
+          <span>✕</span> Close
+        </button>
+        <div class="server-status" id="server-badge" title="FastAPI backend status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Checking...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" id="tab-encode-btn">
+        <span>🚀</span> Encode (Upscale & Hide)
+      </button>
+      <button class="tab-btn" id="tab-decode-btn">
+        <span>🔓</span> Decode (Extract Secret)
+      </button>
+    </nav>
+
+    <!-- Status Notification Banner -->
+    <div id="status-banner" class="status-banner">
+      <span id="banner-icon">ℹ️</span>
+      <span id="banner-message">Status message</span>
+    </div>
+
+    <!-- ================= ENCODE SECTION ================= -->
+    <main id="encode-panel">
+      <div class="workspace-grid">
+        <!-- Left Column: Inputs -->
+        <div class="workspace-col">
+          <div class="card">
+            <div class="field-label">
+              <span>1. Cover Image (Low-Res)</span>
+              <span class="field-hint">Real-ESRGAN Upscale</span>
+            </div>
+            
+            <div class="file-dropzone" id="cover-dropzone">
+              <div class="dropzone-content">
+                <span class="dropzone-icon">🖼️</span>
+                <span class="dropzone-text">Click, Drop, or <strong>Ctrl+V</strong> Cover Image</span>
+              </div>
+              <input type="file" id="cover-input" class="file-input" accept="image/png, image/jpeg, image/webp">
+            </div>
+
+            <!-- Preview Box with X Remove Button -->
+            <div class="file-preview" id="cover-preview-box">
+              <img id="cover-thumb" class="file-thumb" alt="Preview">
+              <div class="file-meta">
+                <div class="file-name" id="cover-name">filename.png</div>
+                <div class="file-info" id="cover-dimensions">0 x 0 px • 0 KB</div>
+              </div>
+              <button type="button" class="btn-remove-preview" id="btn-remove-cover" title="Remove cover image">✕</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="field-label">
+              <span>2. Secret Payload</span>
+            </div>
+
+            <!-- Segmented Toggle for Text vs Image -->
+            <div class="sub-toggle">
+              <div class="toggle-opt selected" id="toggle-payload-text">💬 Secret Text</div>
+              <div class="toggle-opt" id="toggle-payload-image">🖼️ Secret Image</div>
+            </div>
+
+            <!-- Text Payload Form -->
+            <div id="payload-text-group">
+              <textarea id="secret-text-input" placeholder="Type confidential message to hide inside upscaled pixels..."></textarea>
+              <div class="char-counter" id="text-char-count">0 characters (0 bytes)</div>
+            </div>
+
+            <!-- Image Payload Form -->
+            <div id="payload-image-group" class="hidden">
+              <div class="file-dropzone" id="secret-img-dropzone">
+                <div class="dropzone-content">
+                  <span class="dropzone-icon">🔒</span>
+                  <span class="dropzone-text">Click, Drop, or <strong>Ctrl+V</strong> Secret Image</span>
+                </div>
+                <input type="file" id="secret-img-input" class="file-input" accept="image/png, image/jpeg, image/webp">
+              </div>
+
+              <!-- Secret Image Preview Box with X Remove Button -->
+              <div class="file-preview" id="secret-img-preview-box">
+                <img id="secret-img-thumb" class="file-thumb" alt="Secret Preview">
+                <div class="file-meta">
+                  <div class="file-name" id="secret-img-name">secret.png</div>
+                  <div class="file-info" id="secret-img-dimensions">0 x 0 px • 0 KB</div>
+                </div>
+                <button type="button" class="btn-remove-preview" id="btn-remove-secret-img" title="Remove secret image">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-action" id="btn-run-encode">
+            <span>🚀</span> Upscale & Encrypt
+          </button>
+        </div>
+
+        <!-- Right Column: Results -->
+        <div class="workspace-col">
+          <!-- Encode Result Box -->
+          <div class="result-section" id="encode-result-box" style="margin-top: 0;">
+            <div class="result-header">
+              <span class="result-title">✅ Stego Image Ready (Real-ESRGAN Upscaled)</span>
+            </div>
+            <img id="encode-result-img" class="result-image-preview" alt="Upscaled Stego Output">
+            <div class="action-grid">
+              <button class="btn-small btn-download" id="btn-download-stego">
+                <span>💾</span> Download PNG
+              </button>
+              <button class="btn-small btn-copy" id="btn-send-to-decode">
+                <span>➡️</span> Test in Decode
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ================= DECODE SECTION ================= -->
+    <main id="decode-panel" class="hidden">
+      <div class="workspace-grid">
+        <!-- Left Column: Stego Input -->
+        <div class="workspace-col">
+          <div class="card">
+            <div class="field-label">
+              <span>1. Stego Image</span>
+              <span class="field-hint">Lossless PNG</span>
+            </div>
+            
+            <div class="file-dropzone" id="stego-dropzone">
+              <div class="dropzone-content">
+                <span class="dropzone-icon">🔍</span>
+                <span class="dropzone-text">Click, Drop, or <strong>Ctrl+V</strong> Stego PNG</span>
+              </div>
+              <input type="file" id="stego-input" class="file-input" accept="image/png">
+            </div>
+
+            <!-- Stego Preview Box with X Remove Button -->
+            <div class="file-preview" id="stego-preview-box">
+              <img id="stego-thumb" class="file-thumb" alt="Stego Preview">
+              <div class="file-meta">
+                <div class="file-name" id="stego-name">stego.png</div>
+                <div class="file-info" id="stego-dimensions">0 x 0 px • 0 KB</div>
+              </div>
+              <button type="button" class="btn-remove-preview" id="btn-remove-stego" title="Remove stego image">✕</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="field-label">
+              <span>2. Extraction Type</span>
+            </div>
+
+            <!-- Segmented Toggle for Extract Mode -->
+            <div class="sub-toggle">
+              <div class="toggle-opt selected" id="toggle-extract-text">💬 Extract Text</div>
+              <div class="toggle-opt" id="toggle-extract-image">🖼️ Extract Image</div>
+            </div>
+          </div>
+
+          <button class="btn-action" id="btn-run-decode">
+            <span>🔓</span> Extract Hidden Secret
+          </button>
+        </div>
+
+        <!-- Right Column: Decoded Output -->
+        <div class="workspace-col">
+          <!-- Decode Text Result -->
+          <div class="result-section" id="decode-text-result-box" style="margin-top: 0;">
+            <div class="result-header">
+              <span class="result-title">🔓 Extracted Text Message</span>
+            </div>
+            <textarea id="extracted-text-output" readonly rows="5"></textarea>
+            <div style="margin-top: 10px;">
+              <button class="btn-small btn-copy" id="btn-copy-extracted-text" style="width: 100%;">
+                <span>📋</span> Copy Secret Text
+              </button>
+            </div>
+          </div>
+
+          <!-- Decode Image Result -->
+          <div class="result-section" id="decode-image-result-box" style="margin-top: 0;">
+            <div class="result-header">
+              <span class="result-title">🖼️ Extracted Secret Image</span>
+            </div>
+            <img id="extracted-image-preview" class="result-image-preview" alt="Extracted Secret Image">
+            <button class="btn-small btn-download" id="btn-download-extracted-img" style="width: 100%;">
+              <span>💾</span> Download Extracted Image
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
